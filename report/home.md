@@ -11,12 +11,12 @@ The objective of this demo was suggested by the security advisory, which states 
 Before diving into the actual execution, let's take a look at the environment configuration. My goal is to show the infrastructure used rather than giving a line-by-line command list, demonstrating how I replicated a realistic, cloud-based scenario instead of a simple local simulation.
 ## Infrastructure
 As server I deployed two separate instances on Oracle Cloud (using the [Free Tier](https://www.oracle.com/it/cloud/free/)):
-- **Victim istance**: hosts Immich app.
-- **Attacker istance**: hosts the malicious script and catches the exfiltrated api key.
+- **Victim instance**: hosts Immich app.
+- **Attacker instance**: hosts the malicious script and catches the exfiltrated api key.
 
-Both installed with a [minimal version](https://wiki.ubuntu.com/Minimal) of Ubuntu 24.04.4 LTS.
-As domains I decided to use for the victim machine a dedicated subdomain under my personal domain, and for the attacker a free domain obtained via [FreeDNS](https://freedns.afraid.org/).
+Both were set up with a [minimal version](https://wiki.ubuntu.com/Minimal) of Ubuntu 24.04.4 LTS.
+For the domains, I decided to use a dedicated subdomain under my personal domain for the victim machine, and a free domain obtained via [FreeDNS](https://freedns.afraid.org/) for the attacker.
 
-To ensure a production-like setup, I installed [Caddy](https://caddyserver.com/) as a reverse proxy on both machines as it manages the SSL certificates automatically with a two line configuration. This step was crucial because unencrypted HTTP traffic is often rejected or restricted, making a valid HTTPS setup necessary for the exploit chain to succeed seamlessly.
+To ensure a production-like setup, I installed [Caddy](https://caddyserver.com/) as a reverse proxy on both machines as it manages the SSL certificates automatically with just a two line configuration. This step was crucial because unencrypted HTTP traffic is often rejected or restricted, making a valid HTTPS setup necessary for the exploit chain to succeed seamlessly.
 ### Immich setup
 
