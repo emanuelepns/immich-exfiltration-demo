@@ -146,4 +146,4 @@ In the following screenshots you can see how to get a list of users and their de
 
 
 ---
-[Emanuele Pines](mnlpns.it) - Cybersecurity Course - A.Y. 2025/2026 - University Of Trieste
+[Emanuele Pines](https://mnlpns.it) - Cybersecurity Course - A.Y. 2025/2026 - University Of Trieste
