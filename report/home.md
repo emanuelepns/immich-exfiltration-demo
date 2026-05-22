@@ -24,6 +24,7 @@ The victim environment was deployed following the official [Docker Compose insta
 2. Database password was changed as recommended.
 
 During the initial onboarding, Immich requires the creation of a primary user account, which is automatically granted full administrative privileges, as stated in the little box you can see in the following image.
+
 ![](attachments/Pasted%20image%2020260520190228.png)
 
 While this streamlines the initial setup process, in my opinion it introduces a flaw regarding the Principle of Least Privilege: administrative accounts should strictly be used for infrastructure management while daily activities should be performed by unprivileged users. The setup documentation and wizard fail to inform the user about the security implications of this, and usually who installs this kind of self-hosted software frequently follows a "line-by-line" guide without knowing what they are doing nor the underlying risks.
@@ -52,6 +53,7 @@ $ exiftool \
   tomas-cocacola-4AxeQEi0gQc-unsplash.jpg
 ```
 At this point the [file](https://github.com/emanuelepns/immich-exfiltration-demo/blob/main/images/tomas-cocacola-4AxeQEi0gQc-unsplash.jpg) is ready to be uploaded in the Immich library and tested: it correctly opens in the panorama viewer and after triggering the OCR overlay (the `T` button in the bottom right corner) the `iframe` in the previous code is correctly rendered (you can look at it inspecting the page).
+
 ![](attachments/Pasted%20image%2020260520205010.png)
 ### Malicious Script
  With the working exploit established, I proceeded to code the malicious script. After trying a simple `alert(1)` to verify the correct JavaScript execution, I took a look at official API documentation, in particular the [API keys management endpoint](https://api.immich.app/endpoints/api-keys). To create a new key you need to do a simple POST request with two parameters: name and list of permissions.
@@ -121,9 +123,13 @@ Then, to store the keys, the program generates an unique timestamp for each inco
     return "OK"
 ```
 To start the server you just need to run the command `$ flask --app server run -p 8080` inside your virtual environment. As stated in the message shown in the shell, this is just a development server not meant for production, but for this demo is sufficient.
+
 ![](attachments/Pasted%20image%2020260522133824.png)
+
 You can see the incoming requests logged on screen, for the script first and for the exfiltration then. The program correctly extracts and saves the keys in an output JSON file.
+
 ![](attachments/Pasted%20image%2020260522134101.png)
+
 ### Using the key
 With the keys stored in simple JSON files, the attacker could easily automate data exfiltration. I'm not a professional attacker, and my objective is already reached, so I will just show you some examples to show that the API key is working. To do so in a simple way I choose to move on from `curl` and use [HTTPie](https://httpie.io/), a program that simplifies APIs interaction meant for developers. 
 The usage is pretty simple, e.g. for a GET:
@@ -132,9 +138,12 @@ $ http GET https://immich.mnlpns.it/api/endpoint x-api-key:[API-KEY]
 ```
 There are endpoints for almost everything you can do on the server as the user, as retrieving the list of assets, creating albums, sharing things, downloading the library and, if the account is also an admin you can edit configs, download or upload the database. You can have full access of the application! 
 In the following screenshots you can see how to get a list of users and their details, and then how to send a notification to one of them.
+
 ![](attachments/Pasted%20image%2020260522144459.png)
+
 ![](attachments/Pasted%20image%2020260522144601.png)
 ![](attachments/Pasted%20image%2020260522144715.png)
+
 
 ---
 [Emanuele Pines](mnlpns.it) - Cybersecurity Course - A.Y. 2025/2026 - University Of Trieste
