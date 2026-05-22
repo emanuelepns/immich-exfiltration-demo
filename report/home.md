@@ -9,7 +9,7 @@ What made me curious is that the malicious initial payload is an image, in parti
 The objective of this demo was suggested by the security advisory, which states *"session hijacking (via persistent API key creation)"*. After trying the exploit with the provided [test image](https://github.com/emanuelepns/immich-exfiltration-demo/blob/main/images/test.jpg), I built my idea: edit an image by adding a text that triggers a script loaded from an external source, which scope is to create and exfiltrate an api key; then I could use that key to interact with [Immich APIs](https://api.immich.app/), gaining full control of the app.
 ## Setup
 Before diving into the actual execution, let's take a look at the environment configuration. My goal is to show the infrastructure used rather than giving a line-by-line command list, demonstrating how I replicated a realistic, cloud-based scenario instead of a simple local simulation.
-## Infrastructure
+### Infrastructure
 As server I deployed two separate instances on Oracle Cloud (using the [Free Tier](https://www.oracle.com/it/cloud/free/)):
 - **Victim instance**: hosts Immich app;
 - **Attacker instance**: hosts the malicious script and catches the exfiltrated api key.
@@ -101,7 +101,7 @@ The second endpoint acts as a listener for the exfiltration phase, extracting th
 def apikey_exfiltration():
     key = request.args.get('key', 'NO_KEY')
     domain = request.args.get('domain', 'NO_DOMAIN')
-    [...]
+[...]
 ```
 Then, to store the keys, the program generates an unique timestamp for each incoming request and maps the data into a clean dictionary structure ready to export to a JSON file inside a dedicated logs directory:
 ```python
@@ -135,3 +135,6 @@ In the following screenshots you can see how to get a list of users and their de
 ![](attachments/Pasted%20image%2020260522144459.png)
 ![](attachments/Pasted%20image%2020260522144601.png)
 ![](attachments/Pasted%20image%2020260522144715.png)
+
+---
+[Emanuele Pines](mnlpns.it) - Cybersecurity Course - A.Y. 2025/2026 - University Of Trieste
