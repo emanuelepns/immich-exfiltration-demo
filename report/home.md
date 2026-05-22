@@ -3,7 +3,7 @@ This report describes how I exploited CVE-2026-35455 to achieve account hijackin
 All the files used are published in [this repo](https://github.com/emanuelepns/immich-exfiltration-demo).
 A [video](https://mnlpns.it) of the execution is also available.
 ## Introduction
-Immich is a self-hosted photo and video management solution that you can easily deploy on your own server. I have been using it regularly from a year, and on May 2026 while looking for some ideas for a demo for the Cybersecurity exam, I found this interesting vulnerability.
+Immich is a self-hosted photo and video management solution that you can easily deploy on your own server. I have been using it regularly for a year, and on May 2026 while looking for some ideas for a demo for the Cybersecurity exam, I found this interesting vulnerability.
 The [CVE-2026-35455](https://github.com/immich-app/immich/security/advisories/GHSA-9qx4-67jm-cc66) allows an attacker to execute arbitrary JavaScript code extracted by OCR from an image. You can find a more detailed description [here](https://aisafe.io/blog/cve-2026-35455-immich-stored-xss-panorama-ocr). 
 What made me curious is that the malicious initial payload is an image, in particular the text in that image. The file itself doesn't look suspicious and doesn't trigger any antivirus or malware alerts (verified on [VirusTotal](https://www.virustotal.com/gui/file/2da60eb54d179758a8ba453be43677beeb0327934f874e1eb3354979f4709a9a)). 
 The objective of this demo was suggested by the security advisory, which states *"session hijacking (via persistent API key creation)"*. After trying the exploit with the provided [test image](https://github.com/emanuelepns/immich-exfiltration-demo/blob/main/images/test.jpg), I built my idea: edit an image by adding a text that triggers a script loaded from an external source, which scope is to create and exfiltrate an api key; then I could use that key to interact with [Immich APIs](https://api.immich.app/), gaining full control of the app.
@@ -30,7 +30,7 @@ During the initial onboarding, Immich requires the creation of a primary user ac
 While this streamlines the initial setup process, in my opinion it introduces a flaw regarding the Principle of Least Privilege: administrative accounts should strictly be used for infrastructure management while daily activities should be performed by unprivileged users. The setup documentation and wizard fail to inform the user about the security implications of this, and usually who installs this kind of self-hosted software frequently follows a "line-by-line" guide without knowing what they are doing nor the underlying risks.
 ## Execution
 ### Malicious image
-The first thing to do was creating the initial payload. The vulnerability resides in the application's panorama photo viewer, so an asset that triggers it is needed. The image requires:
+The first thing to do was to create the initial payload. The vulnerability resides in the application's panorama photo viewer, so an asset that triggers it is needed. The image requires:
 1. High-resolution, wide-aspect-ratio;
 2. EXIF [`GPano`](https://developers.google.com/streetview/spherical-metadata?hl=it) metadata tags.
 
@@ -88,7 +88,7 @@ $ python3 -m http.server 8080
 ```
 This was sufficient to host the file and view incoming HTTP requests directly in the terminal, but it lacked structural persistence. The exfiltrated keys only appeared in the raw query strings of the server logs, making them difficult to parse, organize, and store securely for long-term exploitation.
 
-To implement a better infrastructure I decided to use a custom Python program using the [Flask](https://flask.palletsprojects.com/en/stable/) framework, as it seemed the quickest and easier way to get up and running without getting crazy. It has a clear code structure, that remembers me the classical functions.
+To implement a better infrastructure I decided to use a custom Python program using the [Flask](https://flask.palletsprojects.com/en/stable/) framework, as it seemed the quickest and easier way to get up and running without getting crazy. It has a clear code structure, that reminds me of classical functions.
 You need to create a virtual environment to use it, but I will skip this steps as you can simply read the [installation guide](https://flask.palletsprojects.com/en/stable/installation/).
 The application I built is made up of two main components: one endpoint for serving the script, the other for managing exfiltration.
 The first routing endpoint handles the initial delivery phase, safely serving the payload from an isolated static directory. It is simple achieved with this three lines:
